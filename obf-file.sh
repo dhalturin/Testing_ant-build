@@ -13,16 +13,17 @@ fi
 
 find ${dir} -name obf-list* -delete -o -name obf-files -delete
 
-find ${dir} -type f -name *.pyco | while read file
+find ${dir} -type f -name *.pyco | egrep -v 'logic|player|vehicle' | while read file
 do
     echo "${file} > $(md5sum ${file} | cut -f1 -d' ' | sed 's/ //')" >> $(dirname ${file})/obf-list
 done
 
 find ${dir} -type d -name scripts | while read d
 do
-    find $d -type f -name *.pyc | while read file
+    find $d -type f -name *.pyc | egrep -v 'logic|player|vehicle' | while read file
     do
         test -f $(dirname ${file})/obf-list || continue
+
         md5=$(md5sum ${file} | cut -f1 -d' ' | sed 's/ //')
         file_=$(echo ${file} | sed 's/\//\\\//g')
 
@@ -30,5 +31,5 @@ do
     done
 done
 
-find project -name obf-list -exec cat {} + > obf-files
+find ${dir} -name obf-list -exec cat {} + > obf-files
 find project -name obf-list -delete
