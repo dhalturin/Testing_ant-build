@@ -53,7 +53,7 @@
             <fileset refid="${refid}" />
         </zip>
 
-        <exec executable="./obf-file.sh" failonerror="true" />
+        <exec executable="./obf-file.sh client" failonerror="true" />
 
         <zip destfile="${dest}/${ant.project.name}.no-obf.zip" level="${compress_level}">
             <fileset dir="${source}" includes="client/**/*.pyco" />
