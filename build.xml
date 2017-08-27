@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<project name="archive.WG" default="init">
+    <property name="repo_url" value="https://github.com/dhalturin/Testing_ant-files.git" />
+    <property name="compress_level" value="0" />
+
+    <property name="source" location="project" />
+    <property name="dest" location="build" />
+
+    <target name="init" depends="prepare, clean, archive, publish" />
+
+    <target name="prepare">
+        <condition property="debug" value="true" else="false">
+            <istrue value="${debug_build}"/>
+        </condition>
+
+        <condition property="pull" value="true" else="false">
+            <istrue value="${pull_repo}"/>
+        </condition>
+
+        <echo message="Debug usage: ${debug}" />
+        <echo message="Pull repo: ${pull}" />
+    </target>
+
+    <target name="clean" depends="project_clean">
+        <delete includeEmptyDirs="true" failonerror="false" dir="${dest}" />
+    </target>
+
+    <target name="project_clean" if="${pull}">
+        <delete includeEmptyDirs="true" failonerror="false" defaultexcludes="false" dir="${source}" />
+
+        <exec executable="/usr/bin/git">
+            <arg value="clone" />
+            <arg value="--depth" />
+            <arg value="1" />
+            <arg value="${repo_url}" />
+            <arg value="${source}" />
+        </exec>
+    </target>
+
+    <target name="archive">
+        <replaceregexp file="${source}/common/scripts/DebugHelper.py" match="DEBUG_MODE.*=.*" replace="DEBUG_MODE=${debug}" />
+
+        <fileset id="main" dir="${source}" includes="client/**, **/logic/*" excludes="**/*/debug" />
+        <fileset id="debug" dir="${source}" includes="client/**, **/logic/**" />
+
+        <condition property="refid" value="debug" else="main">
+            <istrue value="${debug}"/>
+        </condition>
+
+        <echo message="Fileset using: ${refid}" />
+
+        <zip destfile="${dest}/${ant.project.name}.zip" level="${compress_level}">
+            <fileset refid="${refid}" />
+        </zip>
+
+        <exec executable="./obf-file.sh" failonerror="true" />
+
+        <zip destfile="${dest}/${ant.project.name}.no-obf.zip" level="${compress_level}">
+            <fileset dir="${source}" includes="client/**/*.pyco" />
+            <fileset dir="." includes="obf-files" />
+        </zip>
+    </target>
+
+    <target name="publish">
+        <exec executable="rsync" failonerror="true">
+            <arg value="-aog" />
+            <arg value="-e ssh" />
+            <arg value="${dest}/${ant.project.name}.zip" />
+            <arg value="vagrant@127.0.0.1:~" />
+        </exec>
+
+        <exec executable="rsync" failonerror="true">
+            <arg value="-aog" />
+            <arg value="-e ssh" />
+            <arg value="${dest}/${ant.project.name}.no-obf.zip" />
+            <arg value="vagrant@127.0.0.1:~" />
+        </exec>
+    </target>
+</project>
